@@ -1,0 +1,107 @@
+@startuml class-diagram
+title WeatherClient – Dependency Inversion
+
+set separator none
+skinparam classAttributeIconSize 0
+skinparam packageStyle rectangle
+skinparam shadowing false
+hide empty members
+
+package "org.example.idojaras.domain" <<abstraction>> #EEF5FF {
+  interface IdojarasSzolgaltatas <<interface>> {
+    + aktualis(lat : double, lon : double) : Idojaras {exception IdojarasKivetel}
+  }
+  class Idojaras <<record>> {
+    + homerseklet : double
+    + szelsebesseg : double
+    + idopont : LocalDateTime
+  }
+  class IdojarasKivetel <<checked exception>> {
+  }
+  class Varos <<record>> {
+    + nev : String
+    + lat : double
+    + lon : double
+    + {static} ALAPERTELMEZETT_VAROSOK : List<Varos>
+  }
+  Exception <|-- IdojarasKivetel
+  IdojarasSzolgaltatas ..> Idojaras : returns
+  IdojarasSzolgaltatas ..> IdojarasKivetel : throws
+}
+
+package "org.example.idojaras.ui" <<high-level: knows only the interface>> #F2FFF2 {
+  interface IdojarasNezet <<interface>> {
+    + setFrissitesEngedelyezve(engedelyezve : boolean)
+    + eredmenytMutat(varos, homerseklet, szel, idopont : String)
+    + hibatMutat(uzenet : String)
+  }
+  interface HatterFuttato <<interface>> {
+    + futtat(feladat : Callable<T>, siker : Consumer<T>, hiba : Consumer<Throwable>)
+  }
+  class IdojarasPresenter {
+    - szolgaltatas : IdojarasSzolgaltatas
+    - nezet : IdojarasNezet
+    - futtato : HatterFuttato
+    + frissit(varos : Varos)
+  }
+  class IdojarasAblak <<JFrame>> {
+    - varosValaszto : JComboBox<Varos>
+    - frissitesGomb : JButton
+    + {static} megnyit(szolgaltatas : IdojarasSzolgaltatas, varosok : List<Varos>, cim : String) : IdojarasAblak
+  }
+  class SwingWorkerFuttato {
+  }
+
+  IdojarasAblak ..|> IdojarasNezet
+  SwingWorkerFuttato ..|> HatterFuttato
+  IdojarasAblak --> IdojarasPresenter : forwards clicks
+  IdojarasPresenter --> IdojarasNezet
+  IdojarasPresenter --> HatterFuttato
+}
+
+package "org.example.idojaras.openmeteo" <<low-level: HTTP + JSON>> #FFF4E8 {
+  class OpenMeteoKliens {
+    - http : HttpClient
+    + aktualis(lat : double, lon : double) : Idojaras
+  }
+  class OpenMeteoParser {
+    + feldolgoz(json : String) : Idojaras
+    + hibaOka(json : String) : String
+  }
+  OpenMeteoKliens --> OpenMeteoParser
+}
+
+package "org.example.idojaras.mock" <<low-level: offline>> #FFF4E8 {
+  class MockIdojaras {
+    + beallit(varos : Varos, idojaras : Idojaras) : MockIdojaras
+    + setAlapertelmezett(idojaras : Idojaras) : MockIdojaras
+    + hibatDob(uzenet : String) : MockIdojaras
+    + hibaKikapcsolasa() : MockIdojaras
+    + setKesleltetes(kesleltetes : Duration) : MockIdojaras
+    + aktualis(lat : double, lon : double) : Idojaras
+  }
+}
+
+package "org.example.idojaras" <<composition root>> {
+  class Main {
+    + {static} main(args : String[])
+  }
+}
+
+' --- The DIP: high-level UI depends on the abstraction ...
+IdojarasPresenter --> IdojarasSzolgaltatas : depends only on
+IdojarasAblak ..> IdojarasSzolgaltatas : receives
+
+' --- ... and both low-level implementations depend on (realize) the same abstraction.
+OpenMeteoKliens ..|> IdojarasSzolgaltatas
+MockIdojaras ..|> IdojarasSzolgaltatas
+
+' --- Only Main knows the concrete classes.
+Main ..> OpenMeteoKliens : <<create>> (default)
+Main ..> MockIdojaras : <<create>> (~-~-mock)
+Main ..> IdojarasAblak : megnyit(szolgaltatas)
+
+note "The ui package has no dependency on\nopenmeteo or mock and no java.net.http import.\nNo arrow points from ui to an implementation." as N1
+N1 .. IdojarasPresenter
+
+@enduml
