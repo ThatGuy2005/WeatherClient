@@ -196,17 +196,21 @@ without Swing.
 
 ## Screenshots
 
-Screenshots are in [`docs/screenshots/`](docs/screenshots):
+Screenshots are in [`docs/screenshots/`](docs/screenshots).
 
-| File | Shows |
-|---|---|
-| `real-mode.png` | Real mode (`java -jar target/weather-client.jar`) with live data |
-| `mock-mode.png` | Mock mode (`--mock`) with the fixed data |
-| `loading.png` | A request in progress: Refresh disabled, "Loading…" |
-| `error-dialog.png` | The `JOptionPane` error dialog (`--mock-error`, or real mode with no network) |
-| `demo.mp4` *(optional)* | ~1-minute recording of both modes and the error message |
+**Real mode** (`java -jar target/weather-client.jar`): live data from Open-Meteo.
 
 ![Real mode](docs/screenshots/real-mode.png)
+
+Recording: [`real-mode-demo.mp4`](docs/screenshots/real-mode-demo.mp4) (12 s). Switching between
+Cluj-Napoca, București, Târgu Mureș and Wien in real mode and refreshing each one.
+
+**Mock mode** (`java -jar target/weather-client.jar --mock`): fixed offline data (see the table
+under [Run](#run)).
+
 ![Mock mode](docs/screenshots/mock-mode.png)
-![Loading](docs/screenshots/loading.png)
+
+**Error message** (`java -jar target/weather-client.jar --mock-error`): the `JOptionPane` shown
+when the service throws `IdojarasKivetel`.
+
 ![Error dialog](docs/screenshots/error-dialog.png)
